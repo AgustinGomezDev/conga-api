@@ -73,7 +73,6 @@ import { Deck } from './deck'
 import { Player } from './player'
 
 export class Game {
-    public id: string;
     public players: Player[];
     private deck: Deck;
     private currentPlayerIndex: number;
@@ -86,7 +85,6 @@ export class Game {
         this.maxPlayers = maxPlayers;
         this.currentPlayerIndex = 0;
         this.lastPlayedCard = null;
-        this.id = crypto.randomUUID();
     }
 
     public addPlayer(player: Player): boolean {
@@ -154,6 +152,37 @@ export class Game {
         }
 
         return false;
+    }
+
+    public drawLastPlayedCard(player: Player) : boolean {
+        const playerIndex = this.players.findIndex(p => p.socketId === player.socketId);
+        
+        // Verificar si es el turno del jugador
+        if (playerIndex !== this.currentPlayerIndex) {
+            return false;
+        }
+
+        const lastPlayedCard = this.getLastPlayedCard()
+
+        if(lastPlayedCard){
+            player.drawCard(lastPlayedCard)
+            return true
+        }
+
+        return false
+    }
+
+    public setLastPlayedCardNull() : boolean {
+        try {
+            this.lastPlayedCard = null
+            return true
+        } catch (error) {
+            return false
+        }
+    }
+
+    public getLastPlayedCardNull() : Card | null {
+        return this.lastPlayedCard
     }
 
     private advanceTurn(): void {

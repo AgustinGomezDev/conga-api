@@ -144,14 +144,13 @@ io.on('connection', (socket) => {
                     io.to(p.socketId).emit('updateHand', p.getHand());
                 });
 
-                // Emitir el nuevo turno
-                // io.to(`game-${gameId}`).emit('turn', game.getTurn());
 
                 // Emitir el estado del juego
                 io.to(`game-${currentGameId}`).emit('gameState', {
                     currentTurn: game.getTurn(),
                     playersCount: game.getPlayerCount(),
-                    isGameActive: game.isGameActive()
+                    isGameActive: game.isGameActive(),
+                    lastPlayedCard: game.getLastPlayedCard()
                 });
             } else {
                 throw new Error('No puedes jugar en este momento.');
@@ -165,34 +164,35 @@ io.on('connection', (socket) => {
         try {
             const player = state.players[socket.id];
             const game = getCurrentGame();
-    
+
             if (!player || !game) {
                 throw new Error('No estás en ningún juego.');
             }
-    
+
             if (player.getHand().length >= 8) {
                 throw new Error('No puedes robar más cartas (máximo 8).');
             }
-    
+
             // Usar el nuevo método drawCard
             if (game.drawCard(player)) {
                 // Actualizar la mano del jugador que robó
                 socket.emit('updateHand', player.getHand());
-                
+
                 // Emitir el nuevo turno a todos
                 io.to(`game-${currentGameId}`).emit('turn', game.getTurn());
-                
+
                 // Notificar a todos que un jugador robó una carta
                 io.to(`game-${currentGameId}`).emit('playerDrewCard', {
                     playerId: socket.id,
                     handSize: player.getHand().length
                 });
-    
+
                 // Emitir el estado actualizado del juego
                 io.to(`game-${currentGameId}`).emit('gameState', {
                     currentTurn: game.getTurn(),
                     playersCount: game.getPlayerCount(),
-                    isGameActive: game.isGameActive()
+                    isGameActive: game.isGameActive(),
+                    lastPlayedCard: game.getLastPlayedCard()
                 });
             } else {
                 throw new Error('No puedes robar carta en este momento.');
@@ -201,6 +201,51 @@ io.on('connection', (socket) => {
             socket.emit('error', error instanceof Error ? error.message : 'Error al robar carta');
         }
     });
+
+    socket.on('drawLastPlayedCard', () => {
+        try {
+            const player = state.players[socket.id];
+            const game = getCurrentGame();
+
+            if (!player || !game) {
+                throw new Error('No estás en ningún juego.');
+            }
+
+            if (player.getHand().length >= 8) {
+                throw new Error('No puedes robar más cartas (máximo 8).');
+            }
+
+            // Usar el nuevo método drawCard
+            if (game.drawLastPlayedCard(player)) {
+                // Actualizar la mano del jugador que robó
+                socket.emit('updateHand', player.getHand());
+
+                // Emitir el nuevo turno a todos
+                io.to(`game-${currentGameId}`).emit('turn', game.getTurn());
+
+                // Notificar a todos que un jugador robó una carta
+                io.to(`game-${currentGameId}`).emit('playerDrewCard', {
+                    playerId: socket.id,
+                    handSize: player.getHand().length
+                });
+
+                // Borramos la última carta jugada
+                game.setLastPlayedCardNull()
+
+                // Emitir el estado actualizado del juego
+                io.to(`game-${currentGameId}`).emit('gameState', {
+                    currentTurn: game.getTurn(),
+                    playersCount: game.getPlayerCount(),
+                    isGameActive: game.isGameActive(),
+                    lastPlayedCard: game.getLastPlayedCard()
+                });
+            } else {
+                throw new Error('No puedes robar carta en este momento.');
+            }
+        } catch (error) {
+            socket.emit('error', error instanceof Error ? error.message : 'Error al robar carta');
+        }
+    })
 
     socket.on('disconnect', () => {
         const game = getCurrentGame();
