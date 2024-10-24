@@ -247,6 +247,27 @@ io.on('connection', (socket) => {
         }
     })
 
+    socket.on('endGame', (closingCard, combinedCards, leftOverCard) => {
+        const player = state.players[socket.id];
+        const game = getCurrentGame();
+
+        if (!player || !game) {
+            throw new Error('No estás en ningún juego.');
+        }
+
+        if (game.endGame(player, closingCard, combinedCards, leftOverCard)) {
+            socket.emit('gameEnded')
+
+            // Emitir el estado actualizado del juego
+            io.to(`game-${currentGameId}`).emit('gameState', {
+                currentTurn: game.getTurn(),
+                playersCount: game.getPlayerCount(),
+                isGameActive: game.isGameActive(),
+                lastPlayedCard: game.getLastPlayedCard()
+            });
+        }
+    })
+
     socket.on('disconnect', () => {
         const game = getCurrentGame();
         if (game) {

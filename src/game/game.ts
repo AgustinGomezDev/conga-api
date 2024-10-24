@@ -1,73 +1,3 @@
-// import { Card } from './card';
-// import { Deck } from './deck'
-// import { Player } from './player'
-
-// export class Game {
-//     public id: string;
-//     public players: Player[];
-//     private deck: Deck;
-//     private currentPlayerIndex: number = 0;
-//     public maxPlayers: number;
-
-//     constructor(maxPlayers: number) {
-//         this.deck = new Deck();
-//         this.players = []
-//         this.maxPlayers = maxPlayers;
-//         this.id = crypto.randomUUID();
-//     }
-
-//     public addPlayer(player: Player): boolean {
-//         if (this.players.length < this.maxPlayers) {
-//             this.players.push(player);
-//             return true;
-//         }
-//         return false;
-//     }
-
-//     public removePlayer(socketId: string): boolean {
-//         const playerIndex = this.players.findIndex(player => player.socketId === socketId);
-
-//         if (playerIndex === -1) {
-//             return false; // Jugador no encontrado
-//         }
-
-//         // Remover el jugador del array
-//         this.players.splice(playerIndex, 1);
-//     }
-
-
-//     public dealCards() {
-//         const hands = this.deck.dealCards(this.players.length, 7);
-//         this.players.forEach((player, i) => player.setHand(hands[i]));
-//     }
-
-//     public nextTurn(play: string, args?: Card) {
-//         const currentPlayer = this.players[this.currentPlayerIndex];
-//         switch (play) {
-//             case 'play': {
-//                 const canPlay = currentPlayer.playCard(args || null)
-//                 if (canPlay) {
-//                     this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.players.length
-//                 }
-//                 break;
-//             }
-//             case 'draw': {
-//                 currentPlayer.drawCard(this.deck.drawCard())
-//                 break;
-//             }
-//             case 'end': {
-//                 break;
-//             }
-//         }
-//     }
-
-//     public getTurn(): number {
-//         return this.currentPlayerIndex
-//     }
-// }
-
-// ---------------
-
 import { Card } from './card';
 import { Deck } from './deck'
 import { Player } from './player'
@@ -78,6 +8,7 @@ export class Game {
     private currentPlayerIndex: number;
     public maxPlayers: number;
     private lastPlayedCard: Card | null;
+    private isActive: boolean;
 
     constructor(maxPlayers: number) {
         this.deck = new Deck();
@@ -116,11 +47,15 @@ export class Game {
         this.players.forEach((player, i) => player.setHand(hands[i]));
         // Inicializar el turno al repartir
         this.currentPlayerIndex = 0;
+
+        this.isActive = true;
     }
 
     public playCard(player: Player, card: Card): boolean {
+        if (!this.isActive) return false;
+
         const playerIndex = this.players.findIndex(p => p.socketId === player.socketId);
-        
+
         // Verificar si es el turno del jugador
         if (playerIndex !== this.currentPlayerIndex) {
             return false;
@@ -138,8 +73,10 @@ export class Game {
     }
 
     public drawCard(player: Player): boolean {
+        if (!this.isActive) return false;
+
         const playerIndex = this.players.findIndex(p => p.socketId === player.socketId);
-        
+
         // Verificar si es el turno del jugador
         if (playerIndex !== this.currentPlayerIndex) {
             return false;
@@ -154,9 +91,11 @@ export class Game {
         return false;
     }
 
-    public drawLastPlayedCard(player: Player) : boolean {
+    public drawLastPlayedCard(player: Player): boolean {
+        if (!this.isActive) return;
+
         const playerIndex = this.players.findIndex(p => p.socketId === player.socketId);
-        
+
         // Verificar si es el turno del jugador
         if (playerIndex !== this.currentPlayerIndex) {
             return false;
@@ -164,7 +103,7 @@ export class Game {
 
         const lastPlayedCard = this.getLastPlayedCard()
 
-        if(lastPlayedCard){
+        if (lastPlayedCard) {
             player.drawCard(lastPlayedCard)
             return true
         }
@@ -172,7 +111,7 @@ export class Game {
         return false
     }
 
-    public setLastPlayedCardNull() : boolean {
+    public setLastPlayedCardNull(): boolean {
         try {
             this.lastPlayedCard = null
             return true
@@ -181,7 +120,7 @@ export class Game {
         }
     }
 
-    public getLastPlayedCardNull() : Card | null {
+    public getLastPlayedCardNull(): Card | null {
         return this.lastPlayedCard
     }
 
@@ -198,11 +137,52 @@ export class Game {
     }
 
     public isGameActive(): boolean {
-        return this.players.length >= 2;
+        return this.isActive;
     }
 
     public getPlayerCount(): number {
         return this.players.length;
     }
-}
 
+    public endGame(closingPlayer: Player, closingCard: Card, combinedCards: Card[][], leftOverCard?: Card): boolean {
+        const remainingPoints = leftOverCard ? leftOverCard.value : -10;
+        if (remainingPoints > 5) {
+            return false // the player can't have more than 5 points left
+        }
+
+        const isValid = this.validCombinations(combinedCards);
+        if (!isValid) return false;
+
+
+        this.isActive = false;
+        return true;
+    }
+
+    private validCombinations(combinedCards: Card[][]): boolean {
+        for (const combination of combinedCards) {
+            if (this.isSet(combination)) { continue; }
+            if (this.isSequence(combination)) { continue; }
+
+            return false
+        }
+
+        return true
+    }
+
+    private isSet(cards: Card[]): boolean {
+        const value = cards[0].value
+        return cards.every(card => card.value === value);
+    }
+
+    private isSequence(cards: Card[]): boolean {
+        const sortedCards = cards.slice().sort((a, b) => a.value - b.value)
+
+        const suit = sortedCards[0].suit;
+        for (let i = 1; i < sortedCards.length; i++) {
+            if (sortedCards[i].suit !== suit || sortedCards[i].value !== sortedCards[i - 1].value + 1)
+                return false;
+        }
+
+        return true
+    }
+}
