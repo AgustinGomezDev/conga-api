@@ -256,15 +256,14 @@ io.on('connection', (socket) => {
         }
 
         if (game.endGame(player, closingCard, combinedCards, leftOverCard)) {
-            socket.emit('gameEnded')
-
-            // Emitir el estado actualizado del juego
-            io.to(`game-${currentGameId}`).emit('gameState', {
+            io.to(`game-${currentGameId}`).emit('gameEnded', {
                 currentTurn: game.getTurn(),
                 playersCount: game.getPlayerCount(),
                 isGameActive: game.isGameActive(),
                 lastPlayedCard: game.getLastPlayedCard()
-            });
+            })
+        } else{
+            socket.emit('error', 'Error al terminar juego');
         }
     })
 
