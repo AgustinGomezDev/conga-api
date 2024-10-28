@@ -1,4 +1,3 @@
-// ---- Server
 import express from 'express'
 import http from 'http'
 import { Server } from 'socket.io'
@@ -41,7 +40,6 @@ app.get('/', (req, res) => {
 io.on('connection', (socket) => {
     console.log('Usuario conectado:', socket.id);
 
-    // Función helper para obtener el juego actual del jugador
     const getCurrentGame = () => {
         return Object.values(state.games).find(g =>
             g.players.some(p => p.socketId === socket.id)
@@ -70,7 +68,6 @@ io.on('connection', (socket) => {
                 playersCount: game.players.length,
                 maxPlayers
             });
-            // socket.emit('waitingForPlayers', `Esperando jugadores (${game.players.length}/${maxPlayers})`);
         } catch (error) {
             socket.emit('error', error instanceof Error ? error.message : 'Error al crear el juego');
         }
@@ -130,22 +127,17 @@ io.on('connection', (socket) => {
                 throw new Error('Carta no válida.');
             }
 
-            // Usar el nuevo método playCard
             if (game.playCard(player, cardToPlay)) {
-                // Emitir la carta jugada a todos los jugadores
                 io.to(`game-${currentGameId}`).emit('cardPlayed', {
                     playerId: socket.id,
                     card: cardToPlay,
                     lastPlayedCard: game.getLastPlayedCard()
                 });
 
-                // Actualizar las manos de todos los jugadores
                 game.players.forEach(p => {
                     io.to(p.socketId).emit('updateHand', p.getHand());
                 });
 
-
-                // Emitir el estado del juego
                 io.to(`game-${currentGameId}`).emit('gameState', {
                     currentTurn: game.getTurn(),
                     playersCount: game.getPlayerCount(),
@@ -173,21 +165,16 @@ io.on('connection', (socket) => {
                 throw new Error('No puedes robar más cartas (máximo 8).');
             }
 
-            // Usar el nuevo método drawCard
             if (game.drawCard(player)) {
-                // Actualizar la mano del jugador que robó
                 socket.emit('updateHand', player.getHand());
 
-                // Emitir el nuevo turno a todos
                 io.to(`game-${currentGameId}`).emit('turn', game.getTurn());
 
-                // Notificar a todos que un jugador robó una carta
                 io.to(`game-${currentGameId}`).emit('playerDrewCard', {
                     playerId: socket.id,
                     handSize: player.getHand().length
                 });
 
-                // Emitir el estado actualizado del juego
                 io.to(`game-${currentGameId}`).emit('gameState', {
                     currentTurn: game.getTurn(),
                     playersCount: game.getPlayerCount(),
@@ -215,24 +202,20 @@ io.on('connection', (socket) => {
                 throw new Error('No puedes robar más cartas (máximo 8).');
             }
 
-            // Usar el nuevo método drawCard
             if (game.drawLastPlayedCard(player)) {
-                // Actualizar la mano del jugador que robó
+
                 socket.emit('updateHand', player.getHand());
 
-                // Emitir el nuevo turno a todos
                 io.to(`game-${currentGameId}`).emit('turn', game.getTurn());
 
-                // Notificar a todos que un jugador robó una carta
                 io.to(`game-${currentGameId}`).emit('playerDrewCard', {
                     playerId: socket.id,
                     handSize: player.getHand().length
                 });
 
-                // Borramos la última carta jugada
+
                 game.setLastPlayedCardNull()
 
-                // Emitir el estado actualizado del juego
                 io.to(`game-${currentGameId}`).emit('gameState', {
                     currentTurn: game.getTurn(),
                     playersCount: game.getPlayerCount(),
@@ -256,27 +239,34 @@ io.on('connection', (socket) => {
         }
 
         if (game.endGame(player, closingCard, combinedCards, leftOverCard)) {
+            game.pointsController(player, combinedCards, [leftOverCard]);
+
+            socket.broadcast.emit('getOtherPlayersPoints')
+
             io.to(`game-${currentGameId}`).emit('gameEnded', {
                 currentTurn: game.getTurn(),
                 playersCount: game.getPlayerCount(),
                 isGameActive: game.isGameActive(),
-                lastPlayedCard: game.getLastPlayedCard()
+                lastPlayedCard: game.getLastPlayedCard(),
+                scoreBoard: game.getScoreboard()
             })
         } else{
             socket.emit('error', 'Error al terminar juego');
         }
     })
 
+    socket.on('otherPlayersPoints', (combinedCards, leftOvercards) => {
+        
+    })
+
     socket.on('disconnect', () => {
         const game = getCurrentGame();
         if (game) {
-            // Notificar a los demás jugadores
             io.to(`game-${currentGameId}`).emit('playerDisconnected', {
                 message: 'Un jugador se ha desconectado',
                 playerId: socket.id
             });
 
-            // Eliminar el juego si no quedan jugadores
             game.removePlayer(socket.id);
             if (game.players.length === 0) {
                 delete state.games[currentGameId];

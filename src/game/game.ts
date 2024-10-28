@@ -9,6 +9,7 @@ export class Game {
     public maxPlayers: number;
     private lastPlayedCard: Card | null;
     private isActive: boolean;
+    private scoreBoard: { [key: string]: number[] };
 
     constructor(maxPlayers: number) {
         this.deck = new Deck();
@@ -16,11 +17,13 @@ export class Game {
         this.maxPlayers = maxPlayers;
         this.currentPlayerIndex = 0;
         this.lastPlayedCard = null;
+        this.scoreBoard = {};
     }
 
     public addPlayer(player: Player): boolean {
         if (this.players.length < this.maxPlayers) {
             this.players.push(player);
+            this.scoreBoard[player.socketId] = [0]
             return true;
         }
         return false;
@@ -184,5 +187,31 @@ export class Game {
         }
 
         return true
+    }
+
+    public pointsController(player: Player, combinedCards?: Card[][], leftOverCards?: Card[]): number {
+        let totalPoints = 0;
+        totalPoints += leftOverCards.reduce((sum, card) => sum + card.value, 0);
+
+        for (const combination of combinedCards) {
+            const isValidSet = this.isSet(combination);
+            const isValidSequence = this.isSequence(combination);
+
+            if (!isValidSet && !isValidSequence) {
+                totalPoints += combination.reduce((sum, card) => sum + card.value, 0);
+            }
+        }
+
+        if (this.scoreBoard[player.socketId]) {
+            this.scoreBoard[player.socketId].push(totalPoints);
+        } else {
+            this.scoreBoard[player.socketId] = [totalPoints];
+        }
+
+        return totalPoints;
+    }
+
+    public getScoreboard() {
+        return this.scoreBoard;
     }
 }
