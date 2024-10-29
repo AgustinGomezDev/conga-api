@@ -191,14 +191,19 @@ export class Game {
 
     public pointsController(player: Player, combinedCards?: Card[][], leftOverCards?: Card[]): number {
         let totalPoints = 0;
-        totalPoints += leftOverCards.reduce((sum, card) => sum + card.value, 0);
 
-        for (const combination of combinedCards) {
-            const isValidSet = this.isSet(combination);
-            const isValidSequence = this.isSequence(combination);
+        if(leftOverCards.length > 0){
+            totalPoints += leftOverCards.reduce((sum, card) => sum + card.value, 0);
+        }
 
-            if (!isValidSet && !isValidSequence) {
-                totalPoints += combination.reduce((sum, card) => sum + card.value, 0);
+        if(combinedCards[0].length > 0){
+            for (const combination of combinedCards) {
+                const isValidSet = this.isSet(combination);
+                const isValidSequence = this.isSequence(combination);
+    
+                if (!isValidSet && !isValidSequence) {
+                    totalPoints += combination.reduce((sum, card) => sum + card.value, 0);
+                }
             }
         }
 

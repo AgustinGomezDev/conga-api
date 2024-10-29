@@ -255,8 +255,11 @@ io.on('connection', (socket) => {
         }
     })
 
-    socket.on('otherPlayersPoints', (combinedCards, leftOvercards) => {
-        
+    socket.on('otherPlayersCards', (leftOverCards?, combinedCards?) => {
+        const player = state.players[socket.id];
+        const game = getCurrentGame();
+
+        game.pointsController(player, combinedCards, leftOverCards)
     })
 
     socket.on('disconnect', () => {
