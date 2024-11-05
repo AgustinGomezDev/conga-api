@@ -103,7 +103,8 @@ io.on('connection', (socket) => {
                     io.to(p.socketId).emit('gameStarted', {
                         hand: p.getHand(),
                         playerIndex: index,
-                        gameId: currentGameId
+                        gameId: currentGameId,
+                        scoreBoard: game.getScoreboard()
                     });
                 });
                 io.to(`game-${currentGameId}`).emit('turn', game.getTurn());
@@ -260,6 +261,13 @@ io.on('connection', (socket) => {
         const game = getCurrentGame();
 
         game.pointsController(player, combinedCards, leftOverCards)
+        io.to(`game-${currentGameId}`).emit('gameEnded', {
+            currentTurn: game.getTurn(),
+            playersCount: game.getPlayerCount(),
+            isGameActive: game.isGameActive(),
+            lastPlayedCard: game.getLastPlayedCard(),
+            scoreBoard: game.getScoreboard()
+        })
     })
 
     socket.on('disconnect', () => {
