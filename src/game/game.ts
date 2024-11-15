@@ -8,16 +8,17 @@ export class Game {
     private currentPlayerIndex: number;
     public maxPlayers: number;
     private lastPlayedCard: Card | null;
-    private isActive: boolean;
+    private isGameStarted: boolean;
+    private isGamePaused: boolean;
     private scoreBoard: { [key: string]: number[] };
 
     constructor(maxPlayers: number) {
-        this.deck = new Deck();
         this.players = [];
         this.maxPlayers = maxPlayers;
         this.currentPlayerIndex = 0;
         this.lastPlayedCard = null;
         this.scoreBoard = {};
+        this.isGamePaused = false;
     }
 
     public addPlayer(player: Player): boolean {
@@ -46,16 +47,18 @@ export class Game {
     }
 
     public dealCards() {
+        if(this.isGamePaused) this.isGamePaused = false;
+        this.deck = new Deck();
         const hands = this.deck.dealCards(this.players.length, 7);
         this.players.forEach((player, i) => player.setHand(hands[i]));
         // Inicializar el turno al repartir
         this.currentPlayerIndex = 0;
 
-        this.isActive = true;
+        this.isGameStarted = true;
     }
 
     public playCard(player: Player, card: Card): boolean {
-        if (!this.isActive) return false;
+        if (!this.isGameStarted) return false;
 
         const playerIndex = this.players.findIndex(p => p.socketId === player.socketId);
 
@@ -76,7 +79,7 @@ export class Game {
     }
 
     public drawCard(player: Player): boolean {
-        if (!this.isActive) return false;
+        if (!this.isGameStarted) return false;
 
         const playerIndex = this.players.findIndex(p => p.socketId === player.socketId);
 
@@ -95,7 +98,7 @@ export class Game {
     }
 
     public drawLastPlayedCard(player: Player): boolean {
-        if (!this.isActive) return;
+        if (!this.isGameStarted) return;
 
         const playerIndex = this.players.findIndex(p => p.socketId === player.socketId);
 
@@ -139,8 +142,12 @@ export class Game {
         return this.lastPlayedCard;
     }
 
-    public isGameActive(): boolean {
-        return this.isActive;
+    public getIsGameStarted(): boolean {
+        return this.isGameStarted;
+    }
+
+    public getIsGamePaused(): boolean {
+        return this.isGamePaused;
     }
 
     public getPlayerCount(): number {
@@ -157,7 +164,7 @@ export class Game {
         if (!isValid) return false;
 
 
-        this.isActive = false;
+        this.isGamePaused = true;
         return true;
     }
 

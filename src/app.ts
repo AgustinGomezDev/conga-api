@@ -142,7 +142,7 @@ io.on('connection', (socket) => {
                 io.to(`game-${currentGameId}`).emit('gameState', {
                     currentTurn: game.getTurn(),
                     playersCount: game.getPlayerCount(),
-                    isGameActive: game.isGameActive(),
+                    isGameStarted: game.getIsGameStarted(),
                     lastPlayedCard: game.getLastPlayedCard()
                 });
             } else {
@@ -179,7 +179,7 @@ io.on('connection', (socket) => {
                 io.to(`game-${currentGameId}`).emit('gameState', {
                     currentTurn: game.getTurn(),
                     playersCount: game.getPlayerCount(),
-                    isGameActive: game.isGameActive(),
+                    isGameStarted: game.getIsGameStarted(),
                     lastPlayedCard: game.getLastPlayedCard()
                 });
             } else {
@@ -220,7 +220,7 @@ io.on('connection', (socket) => {
                 io.to(`game-${currentGameId}`).emit('gameState', {
                     currentTurn: game.getTurn(),
                     playersCount: game.getPlayerCount(),
-                    isGameActive: game.isGameActive(),
+                    isGameStarted: game.getIsGameStarted(),
                     lastPlayedCard: game.getLastPlayedCard()
                 });
             } else {
@@ -247,11 +247,12 @@ io.on('connection', (socket) => {
             io.to(`game-${currentGameId}`).emit('gameEnded', {
                 currentTurn: game.getTurn(),
                 playersCount: game.getPlayerCount(),
-                isGameActive: game.isGameActive(),
+                isGameStarted: game.getIsGameStarted(),
+                isGamePaused: game.getIsGamePaused(),
                 lastPlayedCard: game.getLastPlayedCard(),
                 scoreBoard: game.getScoreboard()
             })
-        } else{
+        } else {
             socket.emit('error', 'Error al terminar juego');
         }
     })
@@ -264,30 +265,49 @@ io.on('connection', (socket) => {
         io.to(`game-${currentGameId}`).emit('gameEnded', {
             currentTurn: game.getTurn(),
             playersCount: game.getPlayerCount(),
-            isGameActive: game.isGameActive(),
+            isGameStarted: game.getIsGameStarted(),
+            isGamePaused: game.getIsGamePaused(),
             lastPlayedCard: game.getLastPlayedCard(),
             scoreBoard: game.getScoreboard()
         })
     })
 
-    socket.on('disconnect', () => {
+    socket.on('reDealCards', (gameId: number) => {
         const game = getCurrentGame();
-        if (game) {
-            io.to(`game-${currentGameId}`).emit('playerDisconnected', {
-                message: 'Un jugador se ha desconectado',
-                playerId: socket.id
+
+        game.dealCards()
+        game.players.forEach((p, index) => {
+            io.to(p.socketId).emit('gameStarted', {
+                hand: p.getHand(),
+                playerIndex: index,
+                gameId,
+                scoreBoard: game.getScoreboard()
             });
+            io.to(`game-${gameId}`).emit('resetGame', {
+                currentTurn: game.getTurn(),
+                isGamePaused: game.getIsGamePaused()
+            });
+        })
 
-            game.removePlayer(socket.id);
-            if (game.players.length === 0) {
-                delete state.games[currentGameId];
+        socket.on('disconnect', () => {
+            const game = getCurrentGame();
+            if (game) {
+                io.to(`game-${currentGameId}`).emit('playerDisconnected', {
+                    message: 'Un jugador se ha desconectado',
+                    playerId: socket.id
+                });
+
+                game.removePlayer(socket.id);
+                if (game.players.length === 0) {
+                    delete state.games[currentGameId];
+                }
             }
-        }
 
-        delete state.players[socket.id];
-        console.log('Usuario desconectado:', socket.id);
+            delete state.players[socket.id];
+            console.log('Usuario desconectado:', socket.id);
+        });
     });
-});
+})
 
 server.listen(port, () => {
     console.log(`Servidor ejecutándose en: http://localhost:${port}`);
