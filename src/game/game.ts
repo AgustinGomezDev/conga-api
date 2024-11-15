@@ -215,7 +215,8 @@ export class Game {
         }
 
         if (this.scoreBoard[player.socketId]) {
-            this.scoreBoard[player.socketId].push(totalPoints);
+            const lastScore = this.scoreBoard[player.socketId]?.[this.scoreBoard[player.socketId].length - 1];
+            this.scoreBoard[player.socketId].push(totalPoints + lastScore);
         } else {
             this.scoreBoard[player.socketId] = [totalPoints];
         }
