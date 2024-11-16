@@ -250,7 +250,12 @@ io.on('connection', (socket) => {
                 isGameStarted: game.getIsGameStarted(),
                 isGamePaused: game.getIsGamePaused(),
                 lastPlayedCard: game.getLastPlayedCard(),
-                scoreBoard: game.getScoreboard()
+                scoreBoard: game.getScoreboard(),
+                closerPlayerCards: {
+                    closingCard,
+                    leftOverCards: [leftOverCard],
+                    combinedCards
+                }
             })
         } else {
             socket.emit('error', 'Error al terminar juego');
@@ -268,7 +273,13 @@ io.on('connection', (socket) => {
             isGameStarted: game.getIsGameStarted(),
             isGamePaused: game.getIsGamePaused(),
             lastPlayedCard: game.getLastPlayedCard(),
-            scoreBoard: game.getScoreboard()
+            scoreBoard: game.getScoreboard(),
+            closerPlayerCards: {},
+            closedPlayerCards: {
+                leftOverCards,
+                combinedCards
+            }
+            
         })
     })
 
