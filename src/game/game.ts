@@ -89,10 +89,17 @@ export class Game {
         }
 
         const card = this.deck.drawCard();
-        if (card) {
+        if (!card) {
+            const playerHands = [];
+            for(const player of this.players){
+                playerHands.push(player.getHand())
+            }
+            this.deck.resetDeck(playerHands);
+        } else {
             player.drawCard(card);
             return true;
         }
+
 
         return false;
     }

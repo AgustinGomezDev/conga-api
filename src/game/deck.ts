@@ -9,6 +9,7 @@ export class Deck {
     }
 
     private initializeDeck() {
+        this.cards = [];
         const suits = ['oro', 'copa', 'basto', 'espada'] as const
         const values = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
 
@@ -33,6 +34,18 @@ export class Deck {
 
     public drawCard(): Card | null {
         return this.cards.length > 0 ? this.cards.pop() : null;
+    }
+
+    public resetDeck(hands: Card[][]): Card[] {
+        this.initializeDeck();
+        this.shuffleDeck();
+
+        const filteredDeck = this.cards.filter(
+            (card) => !hands.some((hand) => hand.some((handCard) => handCard.id === card.id))
+        );
+
+        this.cards = filteredDeck;
+        return filteredDeck;
     }
 
     public dealCards(playersCount: number, cardsPerPlayer: number): Card[][] {
