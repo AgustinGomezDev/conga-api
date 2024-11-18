@@ -100,7 +100,6 @@ export class Game {
             return true;
         }
 
-
         return false;
     }
 
@@ -210,6 +209,10 @@ export class Game {
             totalPoints += leftOverCards.reduce((sum, card) => sum + card.value, 0);
         }
 
+        if(leftOverCards && leftOverCards[0] === null){
+            totalPoints = totalPoints - 10;
+        }
+
         if(combinedCards && combinedCards[0].length > 0){
             for (const combination of combinedCards) {
                 if(combination.length === 0) continue;
@@ -225,6 +228,9 @@ export class Game {
         if (this.scoreBoard[player.socketId]) {
             const lastScore = this.scoreBoard[player.socketId]?.[this.scoreBoard[player.socketId].length - 1] || 0;
             this.scoreBoard[player.socketId].push(totalPoints + lastScore);
+            if(totalPoints + lastScore > 100) {
+                this.removePlayer(player.socketId)
+            }
         } else {
             this.scoreBoard[player.socketId] = [totalPoints];
         }
