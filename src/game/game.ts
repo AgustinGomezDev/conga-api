@@ -199,7 +199,7 @@ export class Game {
     public pointsController(player: Player, combinedCards?: Card[][], leftOverCards?: Card[]): number {
         let totalPoints = 0;
 
-        if(leftOverCards && leftOverCards.length > 0){
+        if(leftOverCards && leftOverCards[0] !== null){
             totalPoints += leftOverCards.reduce((sum, card) => sum + card.value, 0);
         }
 
