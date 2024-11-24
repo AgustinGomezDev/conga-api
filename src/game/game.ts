@@ -47,7 +47,7 @@ export class Game {
     }
 
     public dealCards() {
-        if(this.isGamePaused) this.isGamePaused = false;
+        if (this.isGamePaused) this.isGamePaused = false;
         this.deck = new Deck();
         const hands = this.deck.dealCards(this.players.length, 7);
         this.players.forEach((player, i) => player.setHand(hands[i]));
@@ -91,7 +91,7 @@ export class Game {
         const card = this.deck.drawCard();
         if (!card) {
             const playerHands = [];
-            for(const player of this.players){
+            for (const player of this.players) {
                 playerHands.push(player.getHand())
             }
             this.deck.resetDeck(playerHands);
@@ -187,38 +187,56 @@ export class Game {
 
     private isSet(cards: Card[]): boolean {
         const value = cards[0].value
-        return cards.every(card => card.value === value);
+
+        for (const card of cards) {
+            if (card.value === 0) card.value = value
+        }
+        const validCombination = cards.every(card => card.value === value);
+
+        return validCombination;
     }
 
     private isSequence(cards: Card[]): boolean {
         const sortedCards = cards.slice().sort((a, b) => a.value - b.value)
 
-        const suit = sortedCards[0].suit;
-        for (let i = 1; i < sortedCards.length; i++) {
-            if (sortedCards[i].suit !== suit || sortedCards[i].value !== sortedCards[i - 1].value + 1)
-                return false;
-        }
+        const suit = sortedCards.find(card => card.suit !== 'comodin')?.suit;
+        let expectedValue = sortedCards[0].value;
 
-        return true
+        if(expectedValue === 0) expectedValue = sortedCards[1].value - 1
+
+        for (const card of sortedCards) {
+            if (card.suit === 'comodin') {
+                expectedValue++;
+                continue;
+            }
+    
+            if (card.suit !== suit || card.value !== expectedValue) {
+                return false;
+            }
+    
+            expectedValue++;
+        }
+    
+        return true;
     }
 
     public pointsController(player: Player, combinedCards?: Card[][], leftOverCards?: Card[]): number {
         let totalPoints = 0;
 
-        if(leftOverCards && leftOverCards[0] !== null){
+        if (leftOverCards && leftOverCards[0] !== null) {
             totalPoints += leftOverCards.reduce((sum, card) => sum + card.value, 0);
         }
 
-        if(leftOverCards && leftOverCards[0] === null){
+        if (leftOverCards && leftOverCards[0] === null) {
             totalPoints = totalPoints - 10;
         }
 
-        if(combinedCards && combinedCards[0].length > 0){
+        if (combinedCards && combinedCards[0].length > 0) {
             for (const combination of combinedCards) {
-                if(combination.length === 0) continue;
+                if (combination.length === 0) continue;
                 const isValidSet = this.isSet(combination);
                 const isValidSequence = this.isSequence(combination);
-    
+
                 if (!isValidSet && !isValidSequence) {
                     totalPoints += combination.reduce((sum, card) => sum + card.value, 0);
                 }
@@ -228,7 +246,7 @@ export class Game {
         if (this.scoreBoard[player.socketId]) {
             const lastScore = this.scoreBoard[player.socketId]?.[this.scoreBoard[player.socketId].length - 1] || 0;
             this.scoreBoard[player.socketId].push(totalPoints + lastScore);
-            if(totalPoints + lastScore > 100) {
+            if (totalPoints + lastScore > 100) {
                 this.removePlayer(player.socketId)
             }
         } else {
