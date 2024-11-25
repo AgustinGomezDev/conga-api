@@ -202,21 +202,21 @@ export class Game {
         const suit = sortedCards.find(card => card.suit !== 'comodin')?.suit;
         let expectedValue = sortedCards[0].value;
 
-        if(expectedValue === 0) expectedValue = sortedCards[1].value - 1
+        if (expectedValue === 0) expectedValue = sortedCards[1].value - 1
 
         for (const card of sortedCards) {
             if (card.suit === 'comodin') {
                 expectedValue++;
                 continue;
             }
-    
+
             if (card.suit !== suit || card.value !== expectedValue) {
                 return false;
             }
-    
+
             expectedValue++;
         }
-    
+
         return true;
     }
 
@@ -258,5 +258,26 @@ export class Game {
 
     public getScoreboard() {
         return this.scoreBoard;
+    }
+
+    public orderCards(socketId: string, newHand: Card[]): boolean {
+        const player = this.players.find(p => p.socketId === socketId);
+        
+        if (!player) {
+            console.log('Jugador no encontrado con socketId:', socketId);
+            return false;
+        }
+    
+        const currentHand = player.getHand();
+    
+        const isSameCards = newHand.length === currentHand.length &&
+            newHand.every(card => currentHand.some(c => c.id === card.id));
+    
+        if (!isSameCards) {
+            return false;
+        }
+    
+        player.setHand(newHand);
+        return true;
     }
 }

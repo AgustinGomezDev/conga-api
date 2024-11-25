@@ -279,7 +279,7 @@ io.on('connection', (socket) => {
                 leftOverCards,
                 combinedCards
             }
-            
+
         })
     })
 
@@ -299,26 +299,32 @@ io.on('connection', (socket) => {
                 isGamePaused: game.getIsGamePaused()
             });
         })
+    })
 
-        socket.on('disconnect', () => {
-            const game = getCurrentGame();
-            if (game) {
-                io.to(`game-${currentGameId}`).emit('playerDisconnected', {
-                    message: 'Un jugador se ha desconectado',
-                    playerId: socket.id
-                });
+    socket.on('reOrderCards', (socketId: string, newHand) => {
+        const game = getCurrentGame();
+        game.orderCards(socketId, newHand)
+    })
 
-                game.removePlayer(socket.id);
-                if (game.players.length === 0) {
-                    delete state.games[currentGameId];
-                }
+
+    socket.on('disconnect', () => {
+        const game = getCurrentGame();
+        if (game) {
+            io.to(`game-${currentGameId}`).emit('playerDisconnected', {
+                message: 'Un jugador se ha desconectado',
+                playerId: socket.id
+            });
+
+            game.removePlayer(socket.id);
+            if (game.players.length === 0) {
+                delete state.games[currentGameId];
             }
+        }
 
-            delete state.players[socket.id];
-            console.log('Usuario desconectado:', socket.id);
-        });
+        delete state.players[socket.id];
+        console.log('Usuario desconectado:', socket.id);
     });
-})
+});
 
 server.listen(port, () => {
     console.log(`Servidor ejecutándose en: http://localhost:${port}`);
