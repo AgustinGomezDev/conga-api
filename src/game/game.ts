@@ -176,6 +176,7 @@ export class Game {
 
     private validCombinations(combinedCards: Card[][]): boolean {
         for (const combination of combinedCards) {
+            if (combination.length === 0) continue;
             if (this.isSet(combination)) { continue; }
             if (this.isSequence(combination)) { continue; }
 
