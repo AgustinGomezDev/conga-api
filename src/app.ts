@@ -266,21 +266,25 @@ io.on('connection', (socket) => {
         const player = state.players[socket.id];
         const game = getCurrentGame();
 
-        game.pointsController(player, combinedCards, leftOverCards)
-        io.to(`game-${currentGameId}`).emit('gameEnded', {
-            currentTurn: game.getTurn(),
-            playersCount: game.getPlayerCount(),
-            isGameStarted: game.getIsGameStarted(),
-            isGamePaused: game.getIsGamePaused(),
-            lastPlayedCard: game.getLastPlayedCard(),
-            scoreBoard: game.getScoreboard(),
-            closerPlayerCards: {},
-            closedPlayerCards: {
-                leftOverCards,
-                combinedCards
-            }
-
-        })
+        if(game.otherPlayersCards(combinedCards)) {
+            game.pointsController(player, combinedCards, leftOverCards)
+            io.to(`game-${currentGameId}`).emit('gameEnded', {
+                currentTurn: game.getTurn(),
+                playersCount: game.getPlayerCount(),
+                isGameStarted: game.getIsGameStarted(),
+                isGamePaused: game.getIsGamePaused(),
+                lastPlayedCard: game.getLastPlayedCard(),
+                scoreBoard: game.getScoreboard(),
+                closerPlayerCards: {},
+                closedPlayerCards: {
+                    leftOverCards,
+                    combinedCards
+                }
+            })
+            socket.emit('error', 'Cartas enviadas')
+        } else {
+            socket.emit('error', 'Error al enviar cartas.')
+        }
     })
 
     socket.on('reDealCards', (gameId: number) => {

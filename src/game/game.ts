@@ -187,6 +187,7 @@ export class Game {
     }
 
     private isSet(cards: Card[]): boolean {
+        if(cards.length < 2) return false;
         const value = cards[0].value
 
         for (const card of cards) {
@@ -198,6 +199,8 @@ export class Game {
     }
 
     private isSequence(cards: Card[]): boolean {
+        if(cards.length < 2) return false;
+
         const sortedCards = cards.slice().sort((a, b) => a.value - b.value)
 
         const suit = sortedCards.find(card => card.suit !== 'comodin')?.suit;
@@ -219,6 +222,14 @@ export class Game {
         }
 
         return true;
+    }
+
+    public otherPlayersCards(combinedCards?: Card[][]): boolean {
+        if(combinedCards[0].length > 1 || combinedCards[1].length > 1){
+            const isValid = this.validCombinations(combinedCards);
+            if (!isValid) return false;
+        }   
+        return true
     }
 
     public pointsController(player: Player, combinedCards?: Card[][], leftOverCards?: Card[]): number {
