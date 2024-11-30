@@ -188,10 +188,12 @@ export class Game {
 
     private isSet(cards: Card[]): boolean {
         if(cards.length < 2) return false;
-        const value = cards[0].value
+        let value = cards[0].value
+
+        if(value === 0) value = cards[1].value
 
         for (const card of cards) {
-            if (card.value === 0) card.value = value
+            if (card.value === 0 && card.suit === 'comodin') card.value = value
         }
         const validCombination = cards.every(card => card.value === value);
 
@@ -200,15 +202,23 @@ export class Game {
 
     private isSequence(cards: Card[]): boolean {
         if(cards.length < 2) return false;
+        cards.forEach(card => {
+            if (card.suit === 'comodin') {
+                card.value = 0;
+            }
+        });
 
-        const sortedCards = cards.slice().sort((a, b) => a.value - b.value)
+        const suit = cards.find(card => card.suit !== 'comodin')?.suit;
+        if (!suit) return false;
 
-        const suit = sortedCards.find(card => card.suit !== 'comodin')?.suit;
-        let expectedValue = sortedCards[0].value;
+        let expectedValue: number;
+        if (cards[0].suit === 'comodin') {
+            expectedValue = cards[1]?.value ? cards[1].value - 1 : 0;
+        } else {
+            expectedValue = cards[0].value;
+        }
 
-        if (expectedValue === 0) expectedValue = sortedCards[1].value - 1
-
-        for (const card of sortedCards) {
+        for (const card of cards) {
             if (card.suit === 'comodin') {
                 expectedValue++;
                 continue;
