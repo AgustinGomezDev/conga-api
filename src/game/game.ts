@@ -246,7 +246,10 @@ export class Game {
         let totalPoints = 0;
 
         if (leftOverCards && leftOverCards[0] !== null) {
-            totalPoints += leftOverCards.reduce((sum, card) => sum + card.value, 0);
+            totalPoints += leftOverCards.reduce((sum, card) => {
+                const cardPoints = card.suit === 'comodin' ? 25 : card.value;
+                return sum + cardPoints;
+            }, 0);
         }
 
         if (leftOverCards && leftOverCards[0] === null) {
@@ -260,7 +263,10 @@ export class Game {
                 const isValidSequence = this.isSequence(combination);
 
                 if (!isValidSet && !isValidSequence) {
-                    totalPoints += combination.reduce((sum, card) => sum + card.value, 0);
+                    totalPoints += combination.reduce((sum, card) => {
+                        const cardPoints = card.suit === 'comodin' ? 25 : card.value;
+                        return sum + cardPoints;
+                    }, 0);
                 }
             }
         }
