@@ -3,6 +3,7 @@ import http from 'http'
 import { Server } from 'socket.io'
 import { Game } from './game/game'
 import { Player } from './game/player'
+import cors from 'cors'
 
 interface ServerState {
     games: Record<string, Game>;
@@ -10,6 +11,21 @@ interface ServerState {
 }
 
 const app = express()
+
+app.use(cors({
+    origin: ['https://jugaralaconga.vercel.app/', 'http://localhost:3001'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true
+}));
+app.options('*', (req, res) => {
+    res.setHeader('Access-Control-Allow-Origin', req.headers.origin);
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.sendStatus(204);
+});
+
 const server = http.createServer(app)
 const io = new Server(server, {
     cors: {
